@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 CinemaX — Кино үзэх</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Noto+Sans+Mongolian&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+–gold: #f5c518;
+–red: #e50914;
+–dark: #0a0a0f;
+–darker: #050508;
+–card: #111118;
+–border: #ffffff12;
+–text: #e8e8f0;
+–muted: #7a7a9a;
+}
+
+html, body {
+background: var(–darker);
+color: var(–text);
+font-family: ‘Rajdhani’, sans-serif;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image: url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 256 256’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘noise’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23noise)’ opacity=‘0.03’/%3E%3C/svg%3E”);
+pointer-events: none;
+z-index: 9999;
+opacity: 0.4;
+}
+
+/* Header */
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 18px 40px;
+border-bottom: 1px solid var(–border);
+background: linear-gradient(180deg, #0a0a0f 0%, transparent 100%);
+position: sticky;
+top: 0;
+z-index: 100;
+backdrop-filter: blur(20px);
+}
+
+.logo {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 2rem;
+letter-spacing: 4px;
+color: var(–gold);
+text-shadow: 0 0 30px #f5c51860;
+}
+
+.logo span {
+color: var(–red);
+}
+
+.header-right {
+display: flex;
+align-items: center;
+gap: 12px;
+font-size: 0.85rem;
+color: var(–muted);
+letter-spacing: 1px;
+}
+
+.live-dot {
+width: 8px; height: 8px;
+background: var(–red);
+border-radius: 50%;
+animation: pulse 1.5s infinite;
+box-shadow: 0 0 10px var(–red);
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Main layout */
+main {
+max-width: 1100px;
+margin: 0 auto;
+padding: 40px 24px;
+}
+
+/* Movie Card */
+.movie-card {
+background: var(–card);
+border: 1px solid var(–border);
+border-radius: 16px;
+overflow: hidden;
+animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+/* Movie Header Info */
+.movie-header {
+padding: 28px 32px 0;
+display: flex;
+align-items: flex-start;
+gap: 20px;
+}
+
+.movie-poster {
+width: 80px;
+height: 110px;
+border-radius: 8px;
+object-fit: cover;
+border: 2px solid var(–border);
+background: linear-gradient(135deg, #1a1a2e, #16213e);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 2.5rem;
+flex-shrink: 0;
+}
+
+.movie-info { flex: 1; }
+
+.movie-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 2.2rem;
+letter-spacing: 2px;
+line-height: 1;
+margin-bottom: 8px;
+}
+
+.movie-meta {
+display: flex;
+gap: 16px;
+flex-wrap: wrap;
+margin-bottom: 10px;
+}
+
+.badge {
+background: #ffffff0d;
+border: 1px solid var(–border);
+padding: 3px 10px;
+border-radius: 4px;
+font-size: 0.75rem;
+letter-spacing: 1px;
+color: var(–muted);
+text-transform: uppercase;
+}
+
+.badge.gold { border-color: var(–gold); color: var(–gold); }
+.badge.red { border-color: var(–red); color: var(–red); }
+
+.movie-desc {
+font-size: 0.9rem;
+color: var(–muted);
+line-height: 1.6;
+max-width: 600px;
+}
+
+/* Video Player */
+.player-wrapper {
+position: relative;
+margin: 24px 0 0;
+background: #000;
+aspect-ratio: 16/9;
+overflow: hidden;
+}
+
+.player-wrapper video {
+width: 100%;
+height: 100%;
+display: block;
+object-fit: contain;
+}
+
+/* Watermark */
+.watermark {
+position: absolute;
+top: 16px;
+right: 16px;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.1rem;
+letter-spacing: 3px;
+color: rgba(245, 197, 24, 0.35);
+pointer-events: none;
+user-select: none;
+text-shadow: 0 1px 4px #000;
+z-index: 10;
+}
+
+/* Anti-screenshot overlay (animating watermark positions) */
+.wm-float {
+position: absolute;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 0.9rem;
+letter-spacing: 2px;
+color: rgba(245, 197, 24, 0.12);
+pointer-events: none;
+user-select: none;
+z-index: 10;
+animation: floatWM 8s linear infinite;
+}
+
+@keyframes floatWM {
+0% { top: 15%; left: 10%; opacity: 0.12; }
+25% { top: 65%; left: 70%; opacity: 0.18; }
+50% { top: 30%; left: 50%; opacity: 0.1; }
+75% { top: 75%; left: 20%; opacity: 0.16; }
+100% { top: 15%; left: 10%; opacity: 0.12; }
+}
+
+/* Controls bar */
+.controls-bar {
+padding: 20px 32px 28px;
+display: flex;
+align-items: center;
+gap: 12px;
+border-top: 1px solid var(–border);
+background: #0d0d15;
+flex-wrap: wrap;
+}
+
+.ctrl-info {
+flex: 1;
+font-size: 0.8rem;
+color: var(–muted);
+letter-spacing: 0.5px;
+}
+
+.ctrl-info strong {
+color: var(–gold);
+}
+
+/* Admin Panel */
+.admin-panel {
+margin-top: 32px;
+background: var(–card);
+border: 1px solid #f5c51820;
+border-radius: 16px;
+overflow: hidden;
+animation: fadeIn 0.8s ease 0.2s both;
+}
+
+.admin-header {
+padding: 18px 28px;
+background: linear-gradient(90deg, #f5c51810, transparent);
+border-bottom: 1px solid #f5c51820;
+display: flex;
+align-items: center;
+gap: 10px;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.3rem;
+letter-spacing: 3px;
+color: var(–gold);
+}
+
+.admin-body {
+padding: 28px;
+display: flex;
+flex-direction: column;
+gap: 16px;
+}
+
+.input-group {
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+
+.input-group label {
+font-size: 0.75rem;
+letter-spacing: 2px;
+text-transform: uppercase;
+color: var(–muted);
+}
+
+.input-group input, .input-group textarea {
+background: #0a0a0f;
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 12px 16px;
+color: var(–text);
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 1rem;
+outline: none;
+transition: border-color 0.2s;
+width: 100%;
+}
+
+.input-group input:focus, .input-group textarea:focus {
+border-color: var(–gold);
+}
+
+.input-group textarea { resize: vertical; min-height: 70px; }
+
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.btn {
+padding: 12px 24px;
+border-radius: 8px;
+border: none;
+cursor: pointer;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1rem;
+letter-spacing: 2px;
+transition: all 0.2s;
+}
+
+.btn-gold {
+background: var(–gold);
+color: #000;
+}
+.btn-gold:hover { background: #ffd700; transform: translateY(-1px); box-shadow: 0 4px 20px #f5c51840; }
+
+.btn-outline {
+background: transparent;
+border: 1px solid var(–border);
+color: var(–muted);
+}
+.btn-outline:hover { border-color: var(–gold); color: var(–gold); }
+
+/* Share link box */
+.share-box {
+background: #0a0a0f;
+border: 1px solid #f5c51830;
+border-radius: 10px;
+padding: 16px 20px;
+display: none;
+flex-direction: column;
+gap: 10px;
+}
+
+.share-box.show { display: flex; }
+
+.share-label {
+font-size: 0.75rem;
+letter-spacing: 2px;
+text-transform: uppercase;
+color: var(–gold);
+}
+
+.share-link-row {
+display: flex;
+gap: 8px;
+align-items: center;
+}
+
+.share-link-input {
+flex: 1;
+background: #111118;
+border: 1px solid var(–border);
+border-radius: 6px;
+padding: 10px 14px;
+color: var(–text);
+font-family: monospace;
+font-size: 0.85rem;
+outline: none;
+}
+
+.btn-copy {
+background: var(–gold);
+color: #000;
+border: none;
+border-radius: 6px;
+padding: 10px 18px;
+cursor: pointer;
+font-family: ‘Bebas Neue’, sans-serif;
+letter-spacing: 1px;
+transition: all 0.2s;
+white-space: nowrap;
+}
+
+.btn-copy:hover { background: #ffd700; }
+.btn-copy.copied { background: #22c55e; color: #fff; }
+
+/* No-right-click overlay */
+.player-shield {
+position: absolute;
+inset: 0;
+z-index: 5;
+user-select: none;
+-webkit-user-select: none;
+}
+
+/* Footer */
+footer {
+text-align: center;
+padding: 32px;
+color: var(–muted);
+font-size: 0.8rem;
+letter-spacing: 1px;
+border-top: 1px solid var(–border);
+margin-top: 60px;
+}
+
+/* Divider */
+.section-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1rem;
+letter-spacing: 4px;
+color: var(–muted);
+margin: 32px 0 16px;
+display: flex;
+align-items: center;
+gap: 12px;
+}
+.section-title::after {
+content: ‘’;
+flex: 1;
+height: 1px;
+background: var(–border);
+}
+
+@media (max-width: 600px) {
+header { padding: 14px 20px; }
+.logo { font-size: 1.5rem; }
+main { padding: 20px 16px; }
+.movie-header { padding: 20px 20px 0; flex-direction: column; }
+.movie-title { font-size: 1.8rem; }
+.controls-bar { padding: 16px 20px; }
+.admin-body { padding: 20px; }
+}
+</style>
+
+</head>
+<body oncontextmenu="return false">
+
+<header>
+  <div class="logo">CINEMA<span>X</span></div>
+  <div class="header-right">
+    <div class="live-dot"></div>
+    ШУУД НЭВТРҮҮЛЭГ
+  </div>
+</header>
+
+<main>
+
+  <!-- Movie Player Card -->
+
+  <div class="movie-card" id="movieCard">
+    <div class="movie-header">
+      <div class="movie-poster" id="posterEmoji">🎬</div>
+      <div class="movie-info">
+        <div class="movie-title" id="displayTitle">Жишээ Кино</div>
+        <div class="movie-meta">
+          <span class="badge gold" id="displayYear">2024</span>
+          <span class="badge" id="displayGenre">Үйлдлт</span>
+          <span class="badge red">HD</span>
+        </div>
+        <div class="movie-desc" id="displayDesc">Энэ кинонд товч мэдээлэл энд харагдана. Та доороос кино мэдээлэл болон Drive линкийг оруулна уу.</div>
+      </div>
+    </div>
+
+```
+<div class="player-wrapper" id="playerWrapper">
+  <!-- Shield prevents right click on video -->
+  <div class="player-shield" oncontextmenu="return false"></div>
+
+  <!-- Watermark -->
+  <div class="watermark">CINEMАX</div>
+  <div class="wm-float" id="wmFloat">CINEMАX</div>
+
+  <!-- Placeholder before video loads -->
+  <div id="placeholder" style="
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; background:#050508;
+    font-family:'Bebas Neue',sans-serif; letter-spacing:3px; color:#333;
+    gap:12px;
+  ">
+    <div style="font-size:4rem;">🎬</div>
+    <div style="font-size:1.2rem;">GOOGLE DRIVE ЛИНК ОРУУЛНА УУ</div>
+  </div>
+
+  <iframe
+    id="videoFrame"
+    style="width:100%;height:100%;position:absolute;inset:0;display:none;border:none;"
+    allow="autoplay; encrypted-media; fullscreen"
+    allowfullscreen
+    sandbox="allow-scripts allow-same-origin allow-presentation"
+  ></iframe>
+</div>
+
+<div class="controls-bar">
+  <div class="ctrl-info">
+    🔒 Татаж авах боломжгүй &nbsp;·&nbsp; 
+    ⚠️ Зохиогчийн эрхийг хамгаалсан &nbsp;·&nbsp;
+    <strong>CINEMАX</strong>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- Admin Panel -->
+
+  <div class="section-title">⚙ ADMIN ТОХИРГОО</div>
+
+  <div class="admin-panel">
+    <div class="admin-header">
+      🎞 КИНО МЭДЭЭЛЭЛ ОРУУЛАХ
+    </div>
+    <div class="admin-body">
+
+```
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div class="input-group">
+      <label>Киноны нэр</label>
+      <input type="text" id="inputTitle" placeholder="жш: Авантар 2" oninput="updateDisplay()">
+    </div>
+    <div class="input-group">
+      <label>Жанр</label>
+      <input type="text" id="inputGenre" placeholder="жш: Sci-Fi, Үйлдлт" oninput="updateDisplay()">
+    </div>
+    <div class="input-group">
+      <label>Он</label>
+      <input type="text" id="inputYear" placeholder="жш: 2024" oninput="updateDisplay()">
+    </div>
+    <div class="input-group">
+      <label>Постер emoji (заавал биш)</label>
+      <input type="text" id="inputEmoji" placeholder="жш: 🚀 🐉 👊" oninput="updateDisplay()">
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label>Товч тайлбар</label>
+    <textarea id="inputDesc" placeholder="Киноны тухай товч мэдээлэл..." oninput="updateDisplay()"></textarea>
+  </div>
+
+  <div class="input-group">
+    <label>Google Drive видео линк</label>
+    <input type="text" id="inputDrive" placeholder="https://drive.google.com/file/d/XXXXXXXX/view">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="loadVideo()">🎬 КИНО ТОГЛУУЛАХ</button>
+    <button class="btn btn-outline" onclick="generateLink()">🔗 ШЭЙР ЛИНК ҮҮСГЭХ</button>
+    <button class="btn btn-outline" onclick="resetAll()">↺ ЦЭВЭРЛЭХ</button>
+  </div>
+
+  <!-- Share box -->
+  <div class="share-box" id="shareBox">
+    <div class="share-label">📤 Messenger-ээр явуулах линк</div>
+    <div class="share-link-row">
+      <input class="share-link-input" id="shareLinkInput" readonly>
+      <button class="btn-copy" id="copyBtn" onclick="copyLink()">ХУУЛАХ</button>
+    </div>
+    <div style="font-size:0.8rem; color:#7a7a9a;">
+      ℹ️ Энэ линкийг Messenger-ээр явуулахад хүн шууд кино үзнэ. Download товч байхгүй.
+    </div>
+  </div>
+
+</div>
+```
+
+  </div>
+
+</main>
+
+<footer>
+  © 2024 CINEMАX · Бүх эрх хамгаалагдсан · Зөвхөн зөвшөөрөлтэй үзэгчдэд зориулагдсан
+</footer>
+
+<script>
+  // Prevent right click everywhere
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Prevent common keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (
+      (e.ctrlKey && ['s','u','p','a','c'].includes(e.key.toLowerCase())) ||
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Prevent drag
+  document.addEventListener('dragstart', e => e.preventDefault());
+
+  function convertDriveLink(url) {
+    // Convert various Google Drive URL formats to embed format
+    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    return url;
+  }
+
+  function updateDisplay() {
+    const title = document.getElementById('inputTitle').value || 'Жишээ Кино';
+    const genre = document.getElementById('inputGenre').value || 'Үйлдлт';
+    const year = document.getElementById('inputYear').value || '2024';
+    const desc = document.getElementById('inputDesc').value || 'Энэ кинонд товч мэдээлэл энд харагдана.';
+    const emoji = document.getElementById('inputEmoji').value || '🎬';
+
+    document.getElementById('displayTitle').textContent = title;
+    document.getElementById('displayGenre').textContent = genre;
+    document.getElementById('displayYear').textContent = year;
+    document.getElementById('displayDesc').textContent = desc;
+    document.getElementById('posterEmoji').textContent = emoji;
+    document.getElementById('wmFloat').textContent = 'CINEMАX · ' + title.toUpperCase();
+  }
+
+  function loadVideo() {
+    const driveUrl = document.getElementById('inputDrive').value.trim();
+    if (!driveUrl) {
+      alert('Google Drive линк оруулна уу!');
+      return;
+    }
+    const embedUrl = convertDriveLink(driveUrl);
+    const frame = document.getElementById('videoFrame');
+    const placeholder = document.getElementById('placeholder');
+    frame.src = embedUrl;
+    frame.style.display = 'block';
+    placeholder.style.display = 'none';
+  }
+
+  function generateLink() {
+    const title = document.getElementById('inputTitle').value;
+    const drive = document.getElementById('inputDrive').value.trim();
+    const genre = document.getElementById('inputGenre').value;
+    const year = document.getElementById('inputYear').value;
+    const desc = document.getElementById('inputDesc').value;
+    const emoji = document.getElementById('inputEmoji').value;
+
+    if (!drive) { alert('Эхлээд Google Drive линк оруулна уу!'); return; }
+
+    // Encode params into URL
+    const params = new URLSearchParams({
+      t: title, d: drive, g: genre, y: year, desc: desc, e: emoji
+    });
+
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = baseUrl + '?' + params.toString();
+
+    document.getElementById('shareLinkInput').value = shareUrl;
+    document.getElementById('shareBox').classList.add('show');
+  }
+
+  function copyLink() {
+    const input = document.getElementById('shareLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ ХУУЛАГДЛАА';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'ХУУЛАХ';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function resetAll() {
+    ['inputTitle','inputGenre','inputYear','inputDesc','inputDrive','inputEmoji'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('videoFrame').src = '';
+    document.getElementById('videoFrame').style.display = 'none';
+    document.getElementById('placeholder').style.display = 'flex';
+    document.getElementById('shareBox').classList.remove('show');
+    updateDisplay();
+  }
+
+  // Auto-load from URL params (when someone opens share link)
+  function loadFromParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('d')) {
+      document.getElementById('inputTitle').value = params.get('t') || '';
+      document.getElementById('inputDrive').value = params.get('d') || '';
+      document.getElementById('inputGenre').value = params.get('g') || '';
+      document.getElementById('inputYear').value = params.get('y') || '';
+      document.getElementById('inputDesc').value = params.get('desc') || '';
+      document.getElementById('inputEmoji').value = params.get('e') || '';
+      updateDisplay();
+      // Auto-play
+      setTimeout(loadVideo, 500);
+    }
+  }
+
+  loadFromParams();
+</script>
+
+</body>
+</html>
