@@ -281,7 +281,7 @@ function playMovie(movie) {
   if (movie.poster_url) { poster.innerHTML=`<img src="${movie.poster_url}" onerror="this.parentElement.textContent='${movie.emoji||'🎬'}'">` } 
   else { poster.textContent = movie.emoji||'🎬'; }
   const url = movie.drive_url||''; const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/); const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  document.getElementById('videoFrame').src = ytMatch ? `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0` : driveMatch ? `https://drive.google.com/file/d/${driveMatch[1]}/preview` : url;
+  document.getElementById('videoFrame').src = ytMatch ? `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0` : driveMatch ? `https://drive.google.com/file/d/${driveMatch[1]}/preview` : url;
   showPage('playerPage');
 }
 
